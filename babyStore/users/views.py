@@ -36,7 +36,31 @@ class LoginView(APIView):
             'message':"loginn success",
             'access_token': str(access_token),
             'refresh_token': str(refresh),
+            'user':{
+                'name': user.name,
+                'email':user.email
+            }
         })
+        
+class LogoutView(APIView):
+
+    def post(self, request):
+        try:
+            # Get the refresh token from the request
+            refresh_token = request.data.get('refresh_token')
+            if not refresh_token:
+                return Response(
+                    {'error': 'Refresh token is required for logout'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Blacklist the refresh token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             
 

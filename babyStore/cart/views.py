@@ -11,10 +11,10 @@ from django.shortcuts import get_object_or_404
 class CartView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        cart,_ = Cart.objects.get_or_create(user=request.user)
+        cart,created = Cart.objects.get_or_create(user=request.user)
         serializer = CartSerializer(cart)
         return Response(serializer.data,status=status.HTTP_200_OK)
-    def post(self,request):
+    def post(self,request,*args,**kwargs):
         cart,_ = Cart.objects.get_or_create(user=request.user)
         serializer = CartItemsSerializer(data = request.data)
         if serializer.is_valid():
@@ -34,7 +34,11 @@ class CartView(APIView):
         return Response({"message":"cart is cleared"},status=status.HTTP_204_NO_CONTENT)
 class QuantityUpdateView(APIView):
     permission_classes=[IsAuthenticated]
-    def patch(self,request):
+    def get(self,request,pk):
+        cart = get_object_or_404(Cart,pk=pk)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    def patch(self,request,pk):
         action = request.data.get('action')
         product_id = request.data.get('product_id')
         
@@ -43,11 +47,11 @@ class QuantityUpdateView(APIView):
         
        # cart = get_object_or_404(Cart,user=request.user)
         try:
-            cart = Cart.objects.get(user=request.user)
+            cart = Cart.objects.get(pk=pk)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart does not exist for this user.'}, status=status.HTTP_404_NOT_FOUND)
         
-        cartitem = get_object_or_404(CartItems,user=request.user,product_id=product_id)
+        cartitem = get_object_or_404(CartItems,cart_id = pk,product_id=product_id)
         
         if action == "increment":
             cartitem.quantity += 1
@@ -65,6 +69,21 @@ class QuantityUpdateView(APIView):
             'product_id': product_id,
             'new_quantity': cartitem.quantity
         },status=status.HTTP_200_OK)
+        
+class RemoveProductCart(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self,request,cart_id,product_id):
+        try:
+            cart = get_object_or_404(Cart,id=cart_id,user=request.user)
+            cart_item = get_object_or_404(CartItems, cart=cart,product_id=product_id)
+            cart_item.delete()
+            return Response({"message": "Product removed from the cart successfully."},status=status.HTTP_200_OK)
+        except Cart.DoesNotExist:
+            return Response({"error": "Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        except CartItems.DoesNotExist:
+            return Response({"error": "Product not found in the cart."}, status=status.HTTP_404_NOT_FOUND)
+        
+        
         
         
         

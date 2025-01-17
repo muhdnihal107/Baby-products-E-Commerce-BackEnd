@@ -24,9 +24,9 @@ class ProductByCategoryView(APIView):
         return Response(serializer.data)
     
 class ProductDetailView(APIView):
-    def get(self,request,product_id):
+    def get(self,request,pk):
         try:
-            product = Product.objects.get(id=product_id)
+            product = Product.objects.get(pk=pk)
             serializer = ProductSerializer(product)
             return Response(serializer.data)
         except Product.DoesNotExist:
