@@ -34,50 +34,52 @@ class CartView(APIView):
         return Response({"message":"cart is cleared"},status=status.HTTP_204_NO_CONTENT)
 class QuantityUpdateView(APIView):
     permission_classes=[IsAuthenticated]
-    def get(self,request,pk):
-        cart = get_object_or_404(Cart,pk=pk)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-    def patch(self,request,pk):
+    def patch(self, request, pk,*args,**kwargs,):
         action = request.data.get('action')
         product_id = request.data.get('product_id')
-        
+        print(pk)
         if not action or not product_id:
-            return Response({"errors:action or productid is not valid"},status=status.HTTP_400_BAD_REQUEST)
-        
-       # cart = get_object_or_404(Cart,user=request.user)
+            return Response({"error": "Action or product_id is not valid"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Fetch the cart for the authenticated user
         try:
-            cart = Cart.objects.get(pk=pk)
+            cart = Cart.objects.get(user=request.user)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart does not exist for this user.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        cartitem = get_object_or_404(CartItems,cart_id = pk,product_id=product_id)
-        
+
+    # Validate and fetch the CartItem
+        try:
+            cart_item = CartItems.objects.get(pk=pk )
+        except CartItems.DoesNotExist:
+            return Response({'error': 'CartItem not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Process the action
         if action == "increment":
-            cartitem.quantity += 1
+            cart_item.quantity += 1
         elif action == "decrement":
-            if cartitem.quantity >= 1:
-                cartitem.quantity -= 1
+            if cart_item.quantity > 1:
+                cart_item.quantity -= 1
             else:
-                cartitem.delete()
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response(status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        cartitem.save()
+            return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_item.save()
         return Response({
             'message': 'Cart item updated successfully.',
             'product_id': product_id,
-            'new_quantity': cartitem.quantity
-        },status=status.HTTP_200_OK)
+            'new_quantity': cart_item.quantity
+        }, status=status.HTTP_200_OK)
+
         
 class RemoveProductCart(APIView):
     permission_classes = [IsAuthenticated]
-    def delete(self,request,cart_id,product_id):
+    def delete(self,request,product_id,pk):
         try:
-            cart = get_object_or_404(Cart,id=cart_id,user=request.user)
-            cart_item = get_object_or_404(CartItems, cart=cart,product_id=product_id)
+            cart = get_object_or_404(Cart,user=request.user)
+            cart_item = get_object_or_404(CartItems, pk=pk,product_id=product_id)
             cart_item.delete()
-            return Response({"message": "Product removed from the cart successfully."},status=status.HTTP_200_OK)
+            return Response({"product_id": product_id, "pk": pk},status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             return Response({"error": "Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
         except CartItems.DoesNotExist:
