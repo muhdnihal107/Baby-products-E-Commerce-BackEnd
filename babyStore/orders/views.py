@@ -6,7 +6,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from .models import Cart
+from cart.models import Cart,CartItems
+
 # Create your views here.
 
 class OrderCreateView(APIView):
@@ -15,19 +16,78 @@ class OrderCreateView(APIView):
         orders = Order.objects.all()
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    def post(self,request):
-        cart = Cart.objects.filter(user=request.user).first()
-        if not cart:
-            return Response({"error": "Cart does not exist for the user"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+
+        try:
+            cart = Cart.objects.get(user=request.user)
+        except Cart.DoesNotExist:
+            return Response({"error": "No active cart found for the user."}, status=status.HTTP_400_BAD_REQUEST)
+
         if hasattr(cart, 'order'):
-            return Response({"error": "This cart has already been used to create an order."}, status=status.HTTP_400_BAD_REQUEST)
-        if cart.items.count() == 0:
-            return Response({"error": "Cart is empty. Cannot create an order."}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = OrderSerializer(data = request.data)
-        if serializer.is_valid():
-            serializer.save(cart=cart,user=request.user)
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            order = cart.order
+            return Response({
+                "message": "Order already exists for this cart.",
+                "order_id": order.id,
+                "status": order.status,
+                "first_name":order.first_name,
+                "last_name":order.last_name,
+                "phone_number":order.phone_number,
+                "email":order.email,
+                "state":order.state,
+                "pincode":order.pincode,
+                "address":order.status,
+                "payment_status": order.payment_status,
+                "created_at": order.created_at
+            }, status=status.HTTP_200_OK)
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        phone_number =data.get('phone_number')
+        email = data.get('email')
+        city = data.get('city')
+        state = data.get('state')
+        pincode = data.get('pincode')
+        address = data.get('address')
+        payment_method = data.get('payment_method')
+        payment_amount = data.get('payment_amount')
+
+        if not address or not payment_method:
+            return Response({"error": "Address and payment method are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not payment_amount or float(payment_amount) <= 0:
+            return Response({"error": "A valid payment amount is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.create(
+            user=user,
+            cart=cart,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            email=email,
+            state=state,
+            pincode=pincode,
+            address=address,
+            payment_method=payment_method,
+            payment_amount=payment_amount
+        )
+        CartItems.objects.filter(cart=cart).delete()
+
+        return Response({
+            "message": "Order created successfully.",
+            "order_id": order.id,
+            "status": order.status,
+            "first_name":order.first_name,
+            "last_name":order.last_name,
+            "phone_number":order.phone_number,
+            "email":order.email,
+            "state":order.state,
+            "pincode":order.pincode,
+            "address":order.address,
+            "payment_status": order.payment_status,
+            "created_at": order.created_at
+        }, status=status.HTTP_201_CREATED)
     
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
