@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
-from cart.models import Cart
+from cart.models import Cart,CartItems
+from products.models import Product
 
 # Create your models here.
 class Order(models.Model):
@@ -25,7 +26,7 @@ class Order(models.Model):
     ]
     
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='orders')
-    cart = models.OneToOneField(Cart,on_delete=models.PROTECT,related_name='order')
+    cart = models.ForeignKey(Cart,on_delete=models.PROTECT,related_name='order')
     status = models.CharField(max_length=20,choices=ORDER_STATUS_CHOICES,default=PENDING)
     first_name = models.CharField(max_length=20, null=True, blank=True)
     last_name = models.CharField(max_length=20, null=True, blank=True)
@@ -42,3 +43,8 @@ class Order(models.Model):
     
     def __str__(self):
         return f"Order {self.id} - {self.status}"
+    
+class OrderItems(models.Model):
+    order = models.ForeignKey(Cart,on_delete=models.CASCADE,related_name='orderitems')
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)

@@ -26,22 +26,22 @@ class OrderCreateView(APIView):
         except Cart.DoesNotExist:
             return Response({"error": "No active cart found for the user."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if hasattr(cart, 'order'):
-            order = cart.order
-            return Response({
-                "message": "Order already exists for this cart.",
-                "order_id": order.id,
-                "status": order.status,
-                "first_name":order.first_name,
-                "last_name":order.last_name,
-                "phone_number":order.phone_number,
-                "email":order.email,
-                "state":order.state,
-                "pincode":order.pincode,
-                "address":order.status,
-                "payment_status": order.payment_status,
-                "created_at": order.created_at
-            }, status=status.HTTP_200_OK)
+        # if hasattr(cart, 'order'):
+        #     order = cart.order
+        #     return Response({
+        #         "message": "Order already exists for this cart.",
+        #         "order_id": order.id,
+        #         "status": order.status,
+        #         "first_name":order.first_name,
+        #         "last_name":order.last_name,
+        #         "phone_number":order.phone_number,
+        #         "email":order.email,
+        #         "state":order.state,
+        #         "pincode":order.pincode,
+        #         "address":order.status,
+        #         "payment_status": order.payment_status,
+        #         "created_at": order.created_at
+        #     }, status=status.HTTP_200_OK)
         first_name = data.get('first_name')
         last_name = data.get('last_name')
         phone_number =data.get('phone_number')
@@ -72,11 +72,19 @@ class OrderCreateView(APIView):
             payment_method=payment_method,
             payment_amount=payment_amount
         )
-        CartItems.objects.filter(cart=cart).delete()
+        
+        cart_items = CartItems.objects.filter(cart=cart)
+        try:
+            order.cart_items.set(cart_items)
+        except:
+            return Response({"error":"error while set cartitems in order"},status=status.HTTP_404_NOT_FOUND)
+        
+        cart_items.delete()
 
         return Response({
             "message": "Order created successfully.",
             "order_id": order.id,
+            "cart":cart.id,
             "status": order.status,
             "first_name":order.first_name,
             "last_name":order.last_name,
@@ -91,14 +99,18 @@ class OrderCreateView(APIView):
     
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self,request,pk):
-        order = get_object_or_404(Order,pk=pk,user = request.user)
+    def get(self,request):
+        try:
+            order = Order.objects.filter(user=request.user).last()
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found or you do not have permission to view this order."},
+                status=status.HTTP_404_NOT_FOUND
+            )
         serializer = OrderSerializer(order)
-        return Response(serializer.data,status=status.HTTP_200_OK)
-    def delete(self,request,pk):
-        order = get_object_or_404(Order,pk=pk,user = request.user)
-        order.delete()
-        return Response({"message": "Order deleted successfully."},status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+        
+    
     
 class OrderListView(APIView):
     permission_classes = [IsAuthenticated]
