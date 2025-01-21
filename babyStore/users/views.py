@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 class RegisterView(APIView):
@@ -38,7 +39,8 @@ class LoginView(APIView):
             'refresh_token': str(refresh),
             'user':{
                 'name': user.name,
-                'email':user.email
+                'email':user.email,
+                'is_staff': user.is_staff,
             }
         })
         
@@ -61,6 +63,21 @@ class LogoutView(APIView):
             return Response({'message': 'Logout successful'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class ListUsersView(APIView):
+    def get(self,request):
+        users = User.objects.filter(is_staff=False)
+        serializer = UserSerializer(users,many=True)
+        if serializer.is_valid:
+            return Response(serializer.data)
+        return Response(serializer.errors)
 
             
 
+class UserDetailView(APIView):
+    def get(self,request,pk):
+        user = get_object_or_404(User,pk=pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+        
+        

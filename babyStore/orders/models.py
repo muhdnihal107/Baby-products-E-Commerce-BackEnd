@@ -45,6 +45,9 @@ class Order(models.Model):
         return f"Order {self.id} - {self.status}"
     
 class OrderItems(models.Model):
-    order = models.ForeignKey(Cart,on_delete=models.CASCADE,related_name='orderitems')
+    order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name='orderitems')
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    
+    class Meta:
+        unique_together = ('order', 'product')
