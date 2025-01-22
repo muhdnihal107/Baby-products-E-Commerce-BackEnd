@@ -72,21 +72,7 @@ class OrderCreateView(APIView):
         serializer = OrderSerializer(order)
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
-        # return Response({
-        #     "message": "Order created successfully.",
-        #     "order_id": order.id,
-        #     "cart":cart.id,
-        #     "status": order.status,
-        #     "first_name":order.first_name,
-        #     "last_name":order.last_name,
-        #     "phone_number":order.phone_number,
-        #     "email":order.email,
-        #     "state":order.state,
-        #     "pincode":order.pincode,
-        #     "address":order.address,
-        #     "payment_status": order.payment_status,
-        #     "created_at": order.created_at
-        # }, status=status.HTTP_201_CREATED)
+        
     
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -121,4 +107,14 @@ class OrderStatusUpdateView(APIView):
         order.save()
         return Response({"message": "Order status updated successfully"}, status=status.HTTP_200_OK)  
 
-
+class OrderDlatailedView(APIView):
+    def get(self,request,pk):
+        try:
+            orderdetail = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return Response(
+                {"error": "Order not found or you do not have permission to view this order."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = OrderSerializer(orderdetail)
+        return Response(serializer.data, status=status.HTTP_200_OK)

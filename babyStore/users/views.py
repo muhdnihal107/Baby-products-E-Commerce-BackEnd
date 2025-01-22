@@ -48,7 +48,6 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            # Get the refresh token from the request
             refresh_token = request.data.get('refresh_token')
             if not refresh_token:
                 return Response(
@@ -56,7 +55,6 @@ class LogoutView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Blacklist the refresh token
             token = RefreshToken(refresh_token)
             token.blacklist()
             

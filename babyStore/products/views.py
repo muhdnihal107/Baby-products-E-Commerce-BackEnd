@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Category,Product
 from .serializers import ProductSerializer,CategorySerializer
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 class CategoryListView(APIView):
@@ -19,12 +20,26 @@ class ProductListView(APIView):
         return Response(serializer.data,status=status.HTTP_200_OK)
     
 class AddProduct(APIView):
-    def post(self,request):
-        serializer = ProductSerializer(data = request.data)
+    def post(self, request):
+        category_data = request.data.get('category')
+        print(request.data, 'hloooo')
+        
+        # Get the category or return a 404 if it does not exist
+        category = get_object_or_404(Category, name=category_data)
+        
+        product_data = {
+            "name": request.data.get("name"),
+            "description": request.data.get("description"),
+            "price": request.data.get("price"),
+            "image": request.data.get("image"),
+            "category": category.id  # Pass the ID of the category
+        }
+
+        serializer = ProductSerializer(data=product_data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class ProductEditView(APIView):
     def patch(self,request,pk):

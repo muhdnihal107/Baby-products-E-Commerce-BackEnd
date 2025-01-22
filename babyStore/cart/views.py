@@ -37,23 +37,19 @@ class QuantityUpdateView(APIView):
     def patch(self, request, pk,*args,**kwargs,):
         action = request.data.get('action')
         product_id = request.data.get('product_id')
-        print(pk)
         if not action or not product_id:
             return Response({"error": "Action or product_id is not valid"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Fetch the cart for the authenticated user
         try:
             cart = Cart.objects.get(user=request.user)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart does not exist for this user.'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Validate and fetch the CartItem
         try:
             cart_item = CartItems.objects.get(pk=pk )
         except CartItems.DoesNotExist:
             return Response({'error': 'CartItem not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    # Process the action
         if action == "increment":
             cart_item.quantity += 1
         elif action == "decrement":
@@ -84,6 +80,18 @@ class RemoveProductCart(APIView):
             return Response({"error": "Cart does not exist."}, status=status.HTTP_404_NOT_FOUND)
         except CartItems.DoesNotExist:
             return Response({"error": "Product not found in the cart."}, status=status.HTTP_404_NOT_FOUND)
+        
+class FetchCartUser(APIView):
+    def get(self,request,userId):
+        cart = get_object_or_404(Cart,user_id=userId)
+        try:
+            cartItems = CartItems.objects.filter(cart=cart)
+            serializer = CartItemsSerializer(cartItems,many=True)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        except:
+            return Response({"error":"cartitems not found"},status=status.HTTP_404_NOT_FOUND)
+        
+        
         
         
         
