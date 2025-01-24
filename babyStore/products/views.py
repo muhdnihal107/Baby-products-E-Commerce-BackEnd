@@ -61,7 +61,10 @@ class ProductEditView(APIView):
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)        
 class ProductByCategoryView(APIView):
     def get(self,request,category_id):
-        products =  Product.objects.filter(category_id = category_id)
+        if category_id == 0:
+            products = Product.objects.all()
+        else:
+            products =  Product.objects.filter(category_id = category_id)
         serializer = ProductSerializer(products,many = True)
         return Response(serializer.data)
     
@@ -73,6 +76,25 @@ class ProductDetailView(APIView):
             return Response(serializer.data)
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class SearchProductsView(APIView):
+    def get(self, request,*args, **kwargs):
+        search = request.query_params.get('search', '')  # Fetch 'search' from query params
+        if not search:
+            return Response(
+                {"error": "Search parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        products = Product.objects.filter(name__icontains=search)  # Case-insensitive search
+        if not products.exists():
+            return Response(
+                {"message": "No products found for the given search term."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
             
 

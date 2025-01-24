@@ -156,7 +156,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  
 ]
 
-RAZORPAY_KEY_ID = 'your_razorpay_key_id'
-RAZORPAY_KEY_SECRET = 'your_razorpay_key_secret'
+RAZORPAY_KEY_ID = 'rzp_test_DgciG06wyFTpai'
+RAZORPAY_KEY_SECRET = '2EwV79OZDSxc4ZutKnagbBEw'
 
 

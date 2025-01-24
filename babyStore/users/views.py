@@ -26,13 +26,13 @@ class LoginView(APIView):
         user = User.objects.filter(email = email).first()
         
         if user is None:
-            raise AuthenticationFailed('user not found')
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         
         refresh = RefreshToken.for_user(user)
         access_token = refresh.access_token
         
         if not user.check_password(password):
-            raise AuthenticationFailed('incorrect password')
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response({
             'message':"loginn success",
             'access_token': str(access_token),
@@ -41,6 +41,7 @@ class LoginView(APIView):
                 'name': user.name,
                 'email':user.email,
                 'is_staff': user.is_staff,
+                'is_blocked': user.is_blocked
             }
         })
         
@@ -78,4 +79,18 @@ class UserDetailView(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data,status=status.HTTP_200_OK)
         
+class BlockUserView(APIView):
+    def post(self,request,user_id):
+        user = get_object_or_404(User,id=user_id)
         
+        if user.is_blocked:
+            user.is_blocked = False
+            action = "unblocked"
+        else:
+            user.is_blocked = True
+            action = "blocked"
+            
+        user.save()
+        return Response({"message": f"User {user.name} has been {action}."}, status=status.HTTP_200_OK)
+
+            

@@ -13,9 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse
 from razorpay.errors import SignatureVerificationError
-from razorpay.utility import verify_payment_signature
-import hmac
-import hashlib
+from razorpay.utility import __all__
 # Create your views here.
 
 class OrderCreateView(APIView):
@@ -53,13 +51,13 @@ class OrderCreateView(APIView):
         if not payment_amount or float(payment_amount) <= 0:
             return Response({"error": "A valid payment amount is required."}, status=status.HTTP_400_BAD_REQUEST)
         
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET))
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
         try:
-            razorpay_order = client.order.create({
-                'amount': int(float(payment_amount) * 100),  # Amount in paise
+            payment = client.order.create({
+                'amount': int(float(payment_amount) * 100),  
                 'currency': 'INR',
-                'payment_capture': 1  # Auto-capture payment
+                'payment_capture': 1  
             })
         except razorpay.errors.RazorpayError as e:
             return Response({"error": "Failed to create Razorpay order", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -76,7 +74,7 @@ class OrderCreateView(APIView):
             address=address,
             payment_method=payment_method,
             payment_amount=payment_amount,
-            razorpay_order_id=razorpay_order['id'],
+            razorpay_order_id=payment['id'],
         )
         
         order_items = [
@@ -100,7 +98,7 @@ class RazorpayPaymentVerify(APIView):
         if not razorpay_order_id or not razorpay_payment_id or not razorpay_signature:
             return Response({"error": "Missing payment verification details."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verify payment signature
+        
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_SECRET))
         params_dict = {
             'razorpay_order_id': razorpay_order_id,
@@ -109,12 +107,12 @@ class RazorpayPaymentVerify(APIView):
         }
 
         try:
-            # Verify signature
+            
             client.utility.verify_payment_signature(params_dict)
 
-            # If signature is verified, mark the payment as successful
+            
             order = Order.objects.get(razorpay_order_id=razorpay_order_id)
-            order.payment_status = 'success'  # Assuming you have a payment_status field in Order model
+            order.payment_status = 'Completed'  
             order.save()
 
             return Response({"message": "Payment verified successfully."}, status=status.HTTP_200_OK)

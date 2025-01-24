@@ -31,6 +31,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     username = None
+    is_blocked = models.BooleanField(default=False,blank=True)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
