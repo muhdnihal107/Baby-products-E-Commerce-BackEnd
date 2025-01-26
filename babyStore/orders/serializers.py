@@ -26,7 +26,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id','user','cart','orderitems','payment_method','payment_status','payment_amount','total_amount',
             'status','address','created_at','updated_at','first_name','last_name','phone_number',
-            'email','state','pincode'
+            'email','state','pincode','razorpay_order_id'
         ]
         
     
