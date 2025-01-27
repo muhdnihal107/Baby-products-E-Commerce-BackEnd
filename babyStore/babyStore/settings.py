@@ -85,10 +85,10 @@ WSGI_APPLICATION = 'babyStore.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'BabyStore',
-        'USER': 'Nihal',  # PostgreSQL username
-        'PASSWORD': 'abcd',  # PostgreSQL password
-        'HOST': 'localhost',  # Set to your PostgreSQL server address
+        'NAME': 'babystoredb',
+        'USER': 'nihal',  # PostgreSQL username
+        'PASSWORD': 'muhdaws107',  # PostgreSQL password
+        'HOST': 'babystoredb.cnie260gwb1i.eu-north-1.rds.amazonaws.com',  # Set to your PostgreSQL server address
         'PORT': '5432',
     }
 }
